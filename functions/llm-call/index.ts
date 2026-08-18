@@ -6,28 +6,65 @@ type RequestBody = {
   model?: string;
 };
 
-type ExpressRequest = {
+type NhostRequest = {
   method: string;
   body?: RequestBody;
 };
 
-type ExpressResponse = {
-  status: (code: number) => ExpressResponse;
-  json: (body: unknown) => ExpressResponse;
+type NhostResponse = {
+  setHeader: (
+    name: string,
+    value: string
+  ) => void;
+  status: (
+    code: number
+  ) => NhostResponse;
+  json: (
+    body: unknown
+  ) => NhostResponse;
+  send: (
+    body?: unknown
+  ) => NhostResponse;
 };
 
-export default async function handler(
-  req: ExpressRequest,
-  res: ExpressResponse
-): Promise<ExpressResponse> {
-  try {
-    if (req.method !== "POST") {
-      return res.status(405).json({
-        success: false,
-        error: "Method not allowed.",
-      });
-    }
+function setCors(
+  res: NhostResponse
+) {
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    "*"
+  );
 
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "POST, OPTIONS"
+  );
+}
+
+export default async function handler(
+  req: NhostRequest,
+  res: NhostResponse
+): Promise<NhostResponse> {
+  setCors(res);
+
+  // Handle browser CORS preflight
+  if (req.method === "OPTIONS") {
+    return res.status(204).send();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed.",
+    });
+  }
+
+  try {
     const body = req.body;
 
     if (
